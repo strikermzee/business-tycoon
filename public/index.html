@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Business Tycoon — Login</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(135deg,#0a1628,#1a237e);font-family:Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;color:#eee}
+.card{background:rgba(30,30,60,0.9);border:1px solid #333;border-radius:14px;padding:32px 28px;width:100%;max-width:380px;backdrop-filter:blur(10px)}
+h1{font-size:26px;font-weight:900;color:#e91e8c;font-style:italic;text-align:center;margin-bottom:6px}
+.sub{text-align:center;color:#888;font-size:13px;margin-bottom:24px}
+.tabs{display:flex;gap:6px;margin-bottom:20px}
+.tab{flex:1;padding:8px;border-radius:8px;border:1px solid #444;background:#2a2a2a;cursor:pointer;font-size:13px;font-weight:700;color:#aaa;text-align:center;transition:.15s}
+.tab.a{background:#e91e8c;color:#fff;border-color:#e91e8c}
+.pane{display:none}.pane.a{display:block}
+label{display:block;font-size:11px;color:#aaa;margin-bottom:4px;margin-top:14px}
+input{width:100%;padding:9px 12px;background:#111;border:1px solid #555;border-radius:8px;color:#fff;font-size:14px}
+input:focus{outline:none;border-color:#e91e8c}
+.btn{width:100%;padding:11px;border-radius:9px;border:none;background:#e91e8c;color:#fff;font-size:15px;font-weight:800;cursor:pointer;margin-top:18px;transition:.15s}
+.btn:hover{background:#c71677}
+.err{color:#ff6b6b;font-size:12px;margin-top:8px;min-height:18px;text-align:center}
+.divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:#555;font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#333}
+.guest-btn{width:100%;padding:9px;border-radius:9px;border:1px solid #555;background:#2a2a2a;color:#aaa;font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
+.guest-btn:hover{border-color:#e91e8c;color:#fff}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>💼 Business Tycoon</h1>
+  <p class="sub">Multiplayer board game — invite friends &amp; play!</p>
+
+  <div class="tabs">
+    <div class="tab a" onclick="switchTab('login',this)">Log In</div>
+    <div class="tab"   onclick="switchTab('register',this)">Register</div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="login" class="pane a">
+    <label>Username</label>
+    <input id="l-user" type="text" placeholder="your username" autocomplete="username"/>
+    <label>Password</label>
+    <input id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+    <div id="l-err" class="err"></div>
+    <button class="btn" onclick="doLogin()">Log In</button>
+  </div>
+
+  <!-- REGISTER -->
+  <div id="register" class="pane">
+    <label>Username <span style="color:#888">(min 3 chars)</span></label>
+    <input id="r-user" type="text" placeholder="choose a username"/>
+    <label>Password</label>
+    <input id="r-pass" type="password" placeholder="choose a password"/>
+    <div id="r-err" class="err"></div>
+    <button class="btn" onclick="doRegister()">Create Account</button>
+  </div>
+
+  <div class="divider">or play without an account</div>
+
+  <div style="display:flex;gap:8px;margin-bottom:4px">
+    <input id="g-name" type="text" placeholder="Your display name (optional)" style="flex:1"/>
+    <button class="guest-btn" style="width:auto;padding:9px 16px" onclick="doGuest()">Play as Guest</button>
+  </div>
+</div>
+
+<script>
+function switchTab(id, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('a'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('a'));
+  el.classList.add('a');
+  document.getElementById(id).classList.add('a');
+}
+
+async function doLogin() {
+  const username = document.getElementById('l-user').value.trim();
+  const password = document.getElementById('l-pass').value;
+  const err = document.getElementById('l-err');
+  err.textContent = '';
+  try {
+    const r = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password}) });
+    const d = await r.json();
+    if (!r.ok) { err.textContent = d.error; return; }
+    saveAndGo(d);
+  } catch { err.textContent = 'Server error. Please try again.'; }
+}
+
+async function doRegister() {
+  const username = document.getElementById('r-user').value.trim();
+  const password = document.getElementById('r-pass').value;
+  const err = document.getElementById('r-err');
+  err.textContent = '';
+  try {
+    const r = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password}) });
+    const d = await r.json();
+    if (!r.ok) { err.textContent = d.error; return; }
+    saveAndGo(d);
+  } catch { err.textContent = 'Server error. Please try again.'; }
+}
+
+async function doGuest() {
+  const name = document.getElementById('g-name').value.trim();
+  const r = await fetch('/api/guest', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name}) });
+  const d = await r.json();
+  saveAndGo(d);
+}
+
+function saveAndGo(data) {
+  sessionStorage.setItem('token', data.token);
+  sessionStorage.setItem('username', data.username);
+  sessionStorage.setItem('userId', data.id);
+  window.location.href = '/gamemode.html';
+}
+
+// Auto-redirect if already logged in
+if (sessionStorage.getItem('token')) window.location.href = '/gamemode.html';
+</script>
+</body>
+</html>
