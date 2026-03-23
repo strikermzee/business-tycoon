@@ -764,7 +764,7 @@ io.on('connection', (socket) => {
     const room = rooms[code];
     if (!room) { socket.emit('joinError', 'Room not found. Check the code.'); return; }
     if (room.phase !== 'lobby') { socket.emit('joinError', 'Game already in progress.'); return; }
-    if (room.players.length >= 6) { socket.emit('joinError', 'Room is full (max 6 players).'); return; }
+    if (room.players.length >= 6) { socket.emit('joinError', 'ERROR: Room Full (maximum 6 players)'); return; }
     const already = room.players.find(p => p.id === user.id);
     if (already) { socket.emit('joinError', 'You are already in this room.'); return; }
     
@@ -1622,15 +1622,69 @@ io.on('connection', (socket) => {
     broadcastRoom(room.code);
   });
 
+  // ── Leave Room (for lobby) ──
+  socket.on('leaveRoom', () => {
+    const room = getRoom(socket);
+    if (!room) return;
+    
+    // Only allow leaving in lobby phase
+    if (room.phase === 'lobby') {
+      const playerIndex = room.players.findIndex(p => p.id === user.id);
+      if (playerIndex !== -1) {
+        const player = room.players[playerIndex];
+        room.players.splice(playerIndex, 1);
+        addLog(room, `${player.name} left the room.`);
+        io.to(room.code).emit('notification', `${player.name} left!`);
+        socket.leave(room.code);
+        socket.roomCode = null;
+        
+        // If room is empty, delete it
+        if (room.players.length === 0) {
+          delete rooms[room.code];
+        } else {
+          // If host left, assign new host
+          if (room.hostId === user.id && room.players.length > 0) {
+            room.hostId = room.players[0].id;
+            addLog(room, `${room.players[0].name} is now the host.`);
+          }
+          broadcastRoom(room.code);
+        }
+      }
+    }
+  });
+
   // ── Disconnect ──
   socket.on('disconnect', () => {
     const room = getRoom(socket);
     if (!room) return;
-    const player = room.players.find(p => p.socketId === socket.id);
-    if (player) { player.connected = false; player.socketId = null; }
-    broadcastRoom(room.code);
-    if (room.phase === 'lobby' && room.players.every(p => !p.connected)) {
-      delete rooms[room.code];
+    const playerIndex = room.players.findIndex(p => p.socketId === socket.id);
+    
+    if (playerIndex !== -1) {
+      const player = room.players[playerIndex];
+      
+      // In lobby phase, remove the player completely
+      if (room.phase === 'lobby') {
+        room.players.splice(playerIndex, 1);
+        addLog(room, `${player.name} left the room.`);
+        io.to(room.code).emit('notification', `${player.name} left!`);
+        
+        // If room is empty, delete it
+        if (room.players.length === 0) {
+          delete rooms[room.code];
+        } else {
+          // If host left, assign new host
+          if (room.hostId === player.id && room.players.length > 0) {
+            room.hostId = room.players[0].id;
+            addLog(room, `${room.players[0].name} is now the host.`);
+          }
+          broadcastRoom(room.code);
+        }
+      } else {
+        // In game phase, just mark as disconnected
+        player.connected = false;
+        player.socketId = null;
+        broadcastRoom(room.code);
+      }
     }
   });
 });

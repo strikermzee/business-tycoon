@@ -218,7 +218,7 @@ h1{font-size:24px;font-weight:900;text-align:center;color:#e91e8c;font-style:ita
 
 <div style="width:100%;max-width:1200px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
   <h1>💼 BUSINESS TYCOON</h1>
-  <button class="btn" style="width:auto;padding:5px 12px" onclick="window.location.href='/lobby.html'">← Lobby</button>
+  <button class="btn" style="width:auto;padding:5px 12px" onclick="window.location.href='/gamemode.html'">← Back</button>
 </div>
 
 <!-- LOBBY SCREEN -->
@@ -232,7 +232,8 @@ h1{font-size:24px;font-weight:900;text-align:center;color:#e91e8c;font-style:ita
     <h3>Players (waiting for host to start…)</h3>
   </div>
   <button id="startBtn" class="start-btn" onclick="socket.emit('startGame')" style="display:none">🚀 Start Game</button>
-  <div id="lobby-status" style="font-size:12px;color:#888;text-align:center">Connecting…</div>
+  <button class="btn" onclick="leaveRoom()" style="background:#c62828;border-color:#c62828;margin-top:10px">← Leave Room</button>
+  <div id="lobby-status" style="font-size:12px;color:#888;text-align:center;margin-top:8px">Connecting…</div>
 </div>
 
 <!-- GAME SCREEN -->
@@ -640,7 +641,7 @@ h1{font-size:24px;font-weight:900;text-align:center;color:#e91e8c;font-style:ita
   <div class="mo" style="text-align:center">
     <h2>🏆 Game Over!</h2>
     <div id="endContent" style="font-size:16px;padding:16px 0;color:#aaa"></div>
-    <button class="btn p" onclick="window.location.href='/lobby.html'" style="margin-top:8px">Back to Lobby</button>
+    <button class="btn p" onclick="window.location.href='/gamemode.html'" style="margin-top:8px">Back to Menu</button>
   </div>
 </div>
 
@@ -1185,7 +1186,7 @@ socket.on('connect', () => {
 });
 
 socket.on('authError', (msg) => { alert(msg); window.location.href = '/'; });
-socket.on('joinError', (msg) => { showNotif(msg, true); setTimeout(()=>window.location.href='/lobby.html',2000); });
+socket.on('joinError', (msg) => { showNotif(msg, true); setTimeout(()=>window.location.href='/lobby.html',2500); });
 socket.on('roomCreated', (code) => { myCode = code; document.getElementById('roomCode').textContent = code; playSound('collect'); });
 socket.on('notification', (msg) => { showNotif(msg); playSound('chat'); });
 
@@ -1447,6 +1448,13 @@ function showNotif(msg, isErr) {
   el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 3000);
 }
 function copyCode() { navigator.clipboard.writeText(myCode).then(()=>showNotif('Code copied!')); }
+
+function leaveRoom() {
+  socket.emit('leaveRoom');
+  sessionStorage.removeItem('code');
+  sessionStorage.removeItem('action');
+  window.location.href = '/lobby.html';
+}
 
 function renderLobby(state) {
   const list = document.getElementById('lobbyPlayers');
@@ -1789,8 +1797,18 @@ function renderActions(state) {
   }
 
   if (state.rolled && cell && (cell.t==='prop'||cell.t==='util') && cell.owner===null && p.pos===cell.id) {
+    // Add question asking if player wants to buy
+    const questionDiv = document.createElement('div');
+    questionDiv.style.cssText = 'background:linear-gradient(135deg,#1a237e,#283593);border:2px solid #3f51b5;border-radius:10px;padding:12px;margin-bottom:10px;text-align:center;';
+    questionDiv.innerHTML = `
+      <div style="font-size:13px;color:#fff;margin-bottom:6px">🏠 You landed on an unowned property!</div>
+      <div style="font-size:16px;font-weight:800;color:#ffd700">Would you like to buy ${cell.name}?</div>
+      <div style="font-size:12px;color:#90caf9;margin-top:4px">Price: Rs.${cell.price.toLocaleString()}</div>
+    `;
+    btns.appendChild(questionDiv);
+    
     const row = document.createElement('div'); row.className = 'btnRow';
-    addBtn(row, `🏠 Buy Rs.${cell.price}`, 'btn g', () => socket.emit('buyProp', cell.id));
+    addBtn(row, `✅ Buy Rs.${cell.price}`, 'btn g', () => socket.emit('buyProp', cell.id));
     addBtn(row, '🔨 Auction', 'btn o', () => socket.emit('passBuy', cell.id));
     btns.appendChild(row);
   }
