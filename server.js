@@ -957,9 +957,15 @@ io.on('connection', (socket) => {
       return;
     }
     
+    // Check if property has a hotel - cannot build houses if hotel exists
+    if (cell.hotel > 0) {
+      socket.emit('notification', 'Cannot build houses - this property has a hotel!');
+      return;
+    }
+    
     // Check max 3 houses
     if (cell.hc >= 3) {
-      socket.emit('notification', 'Maximum 3 houses per city! Build a hotel instead.');
+      socket.emit('notification', 'Maximum 3 houses per city!');
       return;
     }
     
@@ -988,6 +994,12 @@ io.on('connection', (socket) => {
     // Check if player owns all properties in this color group
     if (!ownsFullGroup(room.cells, p.id, cell.g)) {
       socket.emit('notification', `You must own ALL cities in the ${cell.g.toUpperCase()} color group to build!`);
+      return;
+    }
+    
+    // Check if property has houses - cannot build hotel if houses exist
+    if (cell.hc > 0) {
+      socket.emit('notification', 'Cannot build hotel - this property has houses!');
       return;
     }
     

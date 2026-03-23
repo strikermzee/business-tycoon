@@ -54,6 +54,7 @@ h1{font-size:26px;font-weight:900;color:#e91e8c;font-style:italic;text-align:cen
 </head>
 <body>
 <div class="card">
+  <div style="font-size:10px;color:#aaa;letter-spacing:2px;margin-bottom:2px;text-align:center">MZee</div>
   <h1>💼 Business Tycoon</h1>
   <p class="sub">Choose your game mode</p>
   <div class="welcome">Welcome, <span id="greet">Player</span>!</div>
@@ -107,7 +108,7 @@ h1{font-size:26px;font-weight:900;color:#e91e8c;font-style:italic;text-align:cen
   </div>
   
   <button class="logout" onclick="logout()">Log out</button>
-  <button class="back-btn" onclick="window.location.href='/'" style="margin-top:10px">← Back to Login</button>
+  <button class="back-btn" onclick="backToLogin()" style="margin-top:10px">← Back to Login</button>
 </div>
 
 <script>
@@ -202,6 +203,11 @@ function startRobotGame() {
 }
 
 function logout() {
+  sessionStorage.clear();
+  window.location.href = '/';
+}
+
+function backToLogin() {
   sessionStorage.clear();
   window.location.href = '/';
 }
