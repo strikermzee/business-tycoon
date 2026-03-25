@@ -1812,7 +1812,10 @@ function renderActions(state) {
     
     const row = document.createElement('div'); row.className = 'btnRow';
     addBtn(row, `✅ Buy Rs.${cell.price}`, 'btn g', () => socket.emit('buyProp', cell.id));
-    addBtn(row, '🔨 Auction', 'btn o', () => socket.emit('passBuy', cell.id));
+    // Only show auction button if NOT playing with robots
+    if (!state.isRobotGame) {
+      addBtn(row, '🔨 Auction', 'btn o', () => socket.emit('passBuy', cell.id));
+    }
     btns.appendChild(row);
   }
 
@@ -2651,6 +2654,20 @@ function doTrade() {
   // Validate: must offer something
   if (giveCell === '' && giveCash <= 0) {
     alert('You must offer something! Add cash or select a property to give.');
+    return;
+  }
+  
+  // Validate: cannot give more cash than you have
+  const me = gs.players.find(p => p.id === userId);
+  if (me && giveCash > me.money) {
+    alert('You cannot offer more cash than you have! Your balance: Rs.' + me.money.toLocaleString());
+    return;
+  }
+  
+  // Validate: cannot request more cash than target has
+  const target = gs.players.find(p => p.id === targetId);
+  if (target && getCash > target.money) {
+    alert('You cannot request more cash than ' + target.name + ' has! Their balance: Rs.' + target.money.toLocaleString());
     return;
   }
   

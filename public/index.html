@@ -60,9 +60,10 @@ input:focus{outline:none;border-color:#e91e8c}
   <div class="divider">or play without an account</div>
 
   <div style="display:flex;gap:8px;margin-bottom:4px">
-    <input id="g-name" type="text" placeholder="Your display name (optional)" style="flex:1"/>
+    <input id="g-name" type="text" placeholder="Your display name" style="flex:1"/>
     <button class="guest-btn" style="width:auto;padding:9px 16px" onclick="doGuest()">Play as Guest</button>
   </div>
+  <div id="g-err" class="err"></div>
 </div>
 
 <script>
@@ -101,6 +102,14 @@ async function doRegister() {
 
 async function doGuest() {
   const name = document.getElementById('g-name').value.trim();
+  const err = document.getElementById('g-err');
+  err.textContent = '';
+  
+  if (!name) {
+    err.textContent = 'Please type name';
+    return;
+  }
+  
   const r = await fetch('/api/guest', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name}) });
   const d = await r.json();
   saveAndGo(d);

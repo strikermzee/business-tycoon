@@ -1258,7 +1258,9 @@ io.on('connection', (socket) => {
       socket.emit('notification', 'You must offer something! Add cash or a property.');
       return;
     }
-    if (giveCash > p.money) { socket.emit('notification', 'Not enough cash.'); return; }
+    if (giveCash > p.money) { socket.emit('notification', 'Not enough cash to offer.'); return; }
+    // Validate getCash doesn't exceed target's money
+    if (getCash > target.money) { socket.emit('notification', `Cannot request more than ${target.name} has (Rs.${target.money}).`); return; }
     room.pendingTrade = { from: user.id, fromName: p.name, to: targetId, toName: target.name, giveCash: giveCash||0, giveCell: giveCell||null, getCash: getCash||0, getCell: getCell||null };
     addLog(room, `${p.name} proposed a trade to ${target.name}.`);
     const targetSocket = room.players.find(pl => pl.id === targetId);
